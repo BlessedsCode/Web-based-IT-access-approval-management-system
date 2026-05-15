@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Вход — Система согласования доступов</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="auth-body">
+  <div class="auth-box">
+    <h1>Вход в систему</h1>
+    <form id="loginForm">
+      <label>Логин<input type="text" name="username" required autocomplete="username"></label>
+      <label>Пароль<input type="password" name="password" required autocomplete="current-password"></label>
+      <button type="submit">Войти</button>
+      <div id="error" class="error"></div>
+    </form>
+    <p class="hint">По умолчанию: admin / admin123, approver / approver123, user / user123</p>
+  </div>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      const errEl = document.getElementById('error');
+      errEl.textContent = '';
+      try {
+        const r = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (!r.ok) {
+          const err = await r.json();
+          errEl.textContent = err.error || 'Ошибка входа';
+          return;
+        }
+        location.href = '/index.html';
+      } catch (err) {
+        errEl.textContent = 'Не удалось подключиться к серверу';
+      }
+    });
+  </script>
+</body>
+</html>

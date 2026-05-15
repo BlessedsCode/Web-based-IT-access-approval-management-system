@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Заявки — Система согласования доступов</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Согласование ИТ-доступов</div>
+    <nav>
+      <a href="/index.html">Заявки</a>
+      <a href="#" id="reportLink" hidden>Отчёт</a>
+    </nav>
+    <div class="user-info">
+      <span id="userName"></span>
+      <button id="logoutBtn" class="ghost">Выйти</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="toolbar">
+      <h1>Заявки</h1>
+      <button id="createBtn" class="primary">+ Новая заявка</button>
+    </section>
+
+    <section class="filters">
+      <input type="search" id="search" placeholder="Поиск по номеру, ресурсу, отделу">
+      <select id="filterStatus">
+        <option value="">Все статусы</option>
+        <option value="новая">Новая</option>
+        <option value="на_согласовании">На согласовании</option>
+        <option value="требуется_уточнение">Требуется уточнение</option>
+        <option value="согласована">Согласована</option>
+        <option value="выполнена">Выполнена</option>
+        <option value="отклонена">Отклонена</option>
+        <option value="закрыта">Закрыта</option>
+      </select>
+      <select id="filterPriority">
+        <option value="">Все приоритеты</option>
+        <option value="low">Низкий</option>
+        <option value="normal">Обычный</option>
+        <option value="high">Высокий</option>
+        <option value="urgent">Срочный</option>
+      </select>
+      <button id="applyFilters">Применить</button>
+    </section>
+
+    <table class="grid">
+      <thead>
+        <tr>
+          <th>№</th><th>Ресурс</th><th>Тип доступа</th><th>Отдел</th>
+          <th>Заявитель</th><th>Приоритет</th><th>Статус</th><th>Создана</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="empty" class="empty" hidden>Заявок не найдено</div>
+  </main>
+
+  <div id="createDialog" class="modal" hidden>
+    <div class="modal-box">
+      <h2>Новая заявка</h2>
+      <form id="createForm">
+        <label>Отдел <input name="department" required></label>
+        <label>Ресурс <input name="resource" required placeholder="Напр. 1С:Бухгалтерия, AD группа..."></label>
+        <label>Тип доступа
+          <select name="access_type" required>
+            <option value="чтение">Чтение</option>
+            <option value="чтение_запись">Чтение и запись</option>
+            <option value="администрирование">Администрирование</option>
+          </select>
+        </label>
+        <label>Приоритет
+          <select name="priority">
+            <option value="low">Низкий</option>
+            <option value="normal" selected>Обычный</option>
+            <option value="high">Высокий</option>
+            <option value="urgent">Срочный</option>
+          </select>
+        </label>
+        <label>Срок действия (до) <input type="date" name="valid_until"></label>
+        <label>Обоснование <textarea name="justification" rows="4" required></textarea></label>
+        <div class="modal-actions">
+          <button type="button" id="closeCreate" class="ghost">Отмена</button>
+          <button type="submit" class="primary">Создать</button>
+        </div>
+        <div id="createError" class="error"></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="reportDialog" class="modal" hidden>
+    <div class="modal-box">
+      <h2>Отчёт</h2>
+      <div id="reportBody"></div>
+      <div class="modal-actions">
+        <button id="closeReport" class="ghost">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+  <script>app.initList();</script>
+</body>
+</html>

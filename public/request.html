@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Заявка — Система согласования доступов</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><a href="/index.html">← Согласование ИТ-доступов</a></div>
+    <div class="user-info">
+      <span id="userName"></span>
+      <button id="logoutBtn" class="ghost">Выйти</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="loading">Загрузка...</div>
+    <article id="reqRoot" hidden>
+      <header class="req-header">
+        <h1 id="reqTitle"></h1>
+        <span class="badge" id="reqStatus"></span>
+      </header>
+
+      <section class="card">
+        <h2>Информация</h2>
+        <dl class="kv">
+          <dt>Заявитель</dt><dd id="reqApplicant"></dd>
+          <dt>Отдел</dt><dd id="reqDept"></dd>
+          <dt>Ресурс</dt><dd id="reqResource"></dd>
+          <dt>Тип доступа</dt><dd id="reqType"></dd>
+          <dt>Приоритет</dt><dd id="reqPriority"></dd>
+          <dt>Срок действия</dt><dd id="reqValid"></dd>
+          <dt>Создана</dt><dd id="reqCreated"></dd>
+          <dt>Обновлена</dt><dd id="reqUpdated"></dd>
+          <dt>Обоснование</dt><dd id="reqJustification" class="multiline"></dd>
+        </dl>
+      </section>
+
+      <section class="card">
+        <h2>Действия</h2>
+        <div id="actions" class="actions"></div>
+        <label id="actionCommentLabel" hidden>
+          Комментарий
+          <textarea id="actionComment" rows="3"></textarea>
+        </label>
+        <div id="actionError" class="error"></div>
+      </section>
+
+      <section class="card">
+        <h2>Файлы</h2>
+        <ul id="filesList" class="files"></ul>
+        <form id="fileForm" enctype="multipart/form-data">
+          <input type="file" name="file" id="fileInput" required>
+          <button type="submit">Загрузить</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Комментарии</h2>
+        <div id="commentsList" class="comments"></div>
+        <form id="commentForm">
+          <textarea name="text" rows="2" required placeholder="Новый комментарий"></textarea>
+          <button type="submit">Отправить</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>История</h2>
+        <ol id="historyList" class="history"></ol>
+      </section>
+
+      <section class="card">
+        <h2>Шаги согласования</h2>
+        <ol id="stepsList" class="steps"></ol>
+      </section>
+    </article>
+  </main>
+
+  <script src="/app.js"></script>
+  <script>app.initRequest();</script>
+</body>
+</html>
