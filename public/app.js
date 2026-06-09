@@ -137,6 +137,25 @@ const app = (() => {
       document.getElementById('reportDialog').hidden = true;
     });
 
+    const pwDialog = document.getElementById('pwDialog');
+    document.getElementById('changePwBtn').addEventListener('click', () => {
+      document.getElementById('pwError').textContent = '';
+      document.getElementById('pwForm').reset();
+      pwDialog.hidden = false;
+    });
+    document.getElementById('closePw').addEventListener('click', () => { pwDialog.hidden = true; });
+    document.getElementById('pwForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      const errEl = document.getElementById('pwError');
+      errEl.textContent = '';
+      try {
+        await api('/api/auth/change-password', { method: 'POST', body: JSON.stringify(data) });
+        pwDialog.hidden = true;
+        alert('Пароль успешно изменён');
+      } catch (err) { errEl.textContent = err.message; }
+    });
+
     await reload();
   }
 
