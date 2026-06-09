@@ -22,8 +22,11 @@ app.use(session({
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.set('trust proxy', true);
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/requests', require('./routes/requests'));
+app.use('/api/audit', require('./routes/audit'));
 app.use('/api', require('./routes/approval'));
 
 app.use((err, req, res, next) => {

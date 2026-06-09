@@ -15,8 +15,18 @@ Web application for submitting and approving IT access requests.
 - Comments and full change history
 - Server-side status transition validation
 - Built-in summary report
+- **"My Approvals" panel** — pending queue with menu counter, quick filters (awaiting me / urgent / overdue) and bulk approval
+- **Login audit** — audit log of logins, logouts, failed attempts, lockouts and password changes; account lockout for 15 min after 5 failed attempts; password complexity policy
 
 ## Run
+
+Automated deployment (checks Node, installs deps, generates `.env`, initializes DB, starts and probes the server):
+```
+node deploy.js        # Windows / cross-platform
+bash deploy.sh        # Linux / macOS
+```
+
+Or manually:
 ```
 npm install
 node server.js
@@ -43,8 +53,19 @@ Open http://localhost:3000
 - `POST /api/requests/:id/comment`
 - `POST /api/requests/:id/files` — multipart
 - `GET /api/requests/:id/files/:fid` — download
+- `GET /api/requests/my-approvals` — pending queue (approver/admin)
+- `GET /api/requests/count-pending` — pending counter (approver/admin)
+- `POST /api/approval/bulk` — bulk approve selected requests (approver/admin)
+- `POST /api/auth/change-password` — change own password (policy-checked)
+- `GET /api/audit?event_type=&user=&from=&to=` — audit log (admin only)
 - `GET /api/report` — aggregated stats
 
 ## Database
 SQLite file `data.db` is created automatically on first run.
 Default users are seeded if the table is empty.
+`audit_log` stores login/security events; `users` carries `failed_attempts` and `locked_until` for lockout.
+
+`node seed-demo.js` loads demonstration requests (used for screenshots; **replaces** existing request data).
+
+## Screenshots
+See `screenshots/` — deployment run, My Approvals panel, bulk approval, audit log, and account lockout.

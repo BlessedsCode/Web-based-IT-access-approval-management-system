@@ -80,6 +80,41 @@ router.post('/requests/:id/reject', requireRole('approver', 'admin'), (req, res)
   res.json({ ok: true });
 });
 
+router.post('/approval/bulk', requireRole('approver', 'admin'), (req, res) => {
+  const { ids, comment } = req.body || {};
+  if (!Array.isArray(ids) || !ids.length) {
+    return res.status(400).json({ error: 'Не выбрано ни одной заявки' });
+  }
+
+  let approved = 0;
+  const skipped = [];
+
+  const tx = db.transaction(() => {
+    for (const rawId of ids) {
+      const id = Number(rawId);
+      const row = db.prepare('SELECT * FROM requests WHERE id = ?').get(id);
+      if (!row || row.status !== 'на_согласовании') {
+        skipped.push(rawId);
+        continue;
+      }
+      db.prepare("UPDATE requests SET status = 'согласована', updated_at = datetime('now') WHERE id = ?").run(id);
+      const order = db.prepare('SELECT COALESCE(MAX(order_index),0) AS m FROM approval_steps WHERE request_id = ?').get(id).m + 1;
+      db.prepare(`
+        INSERT INTO approval_steps (request_id, approver_id, order_index, status, comment, decided_at)
+        VALUES (?,?,?,?,?, datetime('now'))
+      `).run(id, req.session.user.id, order, 'approved', comment || 'Массовое согласование');
+      db.prepare(`
+        INSERT INTO history (request_id, changed_by, old_status, new_status, comment)
+        VALUES (?,?,?,?,?)
+      `).run(id, req.session.user.id, row.status, 'согласована', comment || 'Массовое согласование');
+      approved++;
+    }
+  });
+  tx();
+
+  res.json({ approved, skipped });
+});
+
 router.get('/report', requireRole('approver', 'admin'), (req, res) => {
   const byStatus = db.prepare(`
     SELECT status, COUNT(*) AS count FROM requests GROUP BY status

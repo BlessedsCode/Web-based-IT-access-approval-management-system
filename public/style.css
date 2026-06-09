@@ -156,3 +156,28 @@ label input, label select, label textarea { margin-top: 4px; }
 #reportBody table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
 #reportBody th, #reportBody td { border: 1px solid #d0d7de; padding: 6px 10px; font-size: 0.9rem; text-align: left; }
 #reportBody h3 { margin: 12px 0 6px; font-size: 1rem; }
+
+.count-badge {
+  display: inline-block;
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #d33;
+  color: #fff;
+  font-size: 0.75rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.quick-filter { background: #fff; }
+.quick-filter.active { background: #1e6fff; color: #fff; border-color: #1e6fff; }
+
+.overdue { color: #b3261e; font-weight: 600; }
+
+.grid td a { color: #1e6fff; }
+
+.badge.event-login { background: #e8f5e9; color: #1f6f2c; }
+.badge.event-logout { background: #eef0f3; color: #444; }
+.badge.event-login_failed { background: #fde2e1; color: #b3261e; }
+.badge.event-lockout { background: #ffe7d6; color: #a04a00; }
+.badge.event-password_changed { background: #e3f2fd; color: #0a52cc; }

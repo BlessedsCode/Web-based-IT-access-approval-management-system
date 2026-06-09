@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Журнал аудита — Система согласования доступов</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><a href="/index.html">Согласование ИТ-доступов</a></div>
+    <nav>
+      <a href="/index.html">Заявки</a>
+      <a href="/approvals.html" id="approvalsLink" hidden>Мои согласования <span id="pendingCount" class="count-badge" hidden>0</span></a>
+      <a href="/audit.html" id="auditLink" hidden>Журнал аудита</a>
+    </nav>
+    <div class="user-info">
+      <span id="userName"></span>
+      <button id="logoutBtn" class="ghost">Выйти</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="toolbar">
+      <h1>Журнал аудита входа</h1>
+    </section>
+
+    <section class="filters">
+      <input type="search" id="filterUser" placeholder="Логин пользователя">
+      <select id="filterEvent">
+        <option value="">Все события</option>
+        <option value="login">Вход</option>
+        <option value="logout">Выход</option>
+        <option value="login_failed">Неудачная попытка</option>
+        <option value="lockout">Блокировка</option>
+        <option value="password_changed">Смена пароля</option>
+      </select>
+      <input type="date" id="filterFrom" title="С даты">
+      <input type="date" id="filterTo" title="По дату">
+      <button id="applyFilters">Применить</button>
+      <button id="resetFilters" class="ghost">Сбросить</button>
+    </section>
+
+    <table class="grid">
+      <thead>
+        <tr>
+          <th>Дата и время</th><th>Пользователь</th><th>Событие</th>
+          <th>IP-адрес</th><th>Детали</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="empty" class="empty" hidden>Записей не найдено</div>
+  </main>
+
+  <script src="/app.js"></script>
+  <script>app.initAudit();</script>
+</body>
+</html>

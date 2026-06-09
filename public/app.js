@@ -37,7 +37,26 @@ const app = (() => {
       await api('/api/auth/logout', { method: 'POST' });
       location.href = '/login.html';
     });
+    await wireNav(me);
     return me;
+  }
+
+  async function wireNav(me) {
+    const canApprove = me.role === 'approver' || me.role === 'admin';
+    const approvalsLink = document.getElementById('approvalsLink');
+    if (approvalsLink && canApprove) {
+      approvalsLink.hidden = false;
+      try {
+        const { count } = await api('/api/requests/count-pending');
+        const badge = document.getElementById('pendingCount');
+        if (badge) {
+          badge.textContent = count;
+          badge.hidden = count === 0;
+        }
+      } catch (_) { /* счётчик не критичен */ }
+    }
+    const auditLink = document.getElementById('auditLink');
+    if (auditLink && me.role === 'admin') auditLink.hidden = false;
   }
 
   function fmtDate(s) {
@@ -334,6 +353,165 @@ const app = (() => {
     }
   }
 
+  async function initApprovals() {
+    await loadMe();
+
+    const selected = new Set();
+    let all = [];
+    let activeFilter = 'pending';
+
+    const bulkBtn = document.getElementById('bulkApproveBtn');
+    const tbody = document.getElementById('rows');
+    const selectAll = document.getElementById('selectAll');
+
+    const isOverdue = (r) => r.valid_until && r.valid_until < new Date().toISOString().slice(0, 10);
+    const isUrgent = (r) => r.priority === 'urgent' || r.priority === 'high';
+
+    const visible = () => all.filter((r) => {
+      if (activeFilter === 'urgent') return isUrgent(r);
+      if (activeFilter === 'overdue') return isOverdue(r);
+      return true;
+    });
+
+    const updateBulkBtn = () => {
+      bulkBtn.disabled = selected.size === 0;
+      bulkBtn.textContent = selected.size
+        ? `Согласовать выбранные (${selected.size})`
+        : 'Согласовать выбранные';
+    };
+
+    const render = () => {
+      const list = visible();
+      tbody.innerHTML = '';
+      document.getElementById('empty').hidden = list.length > 0;
+      for (const r of list) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="checkbox" class="row-check" data-id="${r.id}" ${selected.has(r.id) ? 'checked' : ''}></td>
+          <td><a href="/request.html?id=${r.id}">${r.number}</a></td>
+          <td>${escapeHtml(r.resource)}</td>
+          <td>${escapeHtml(r.access_type)}</td>
+          <td>${escapeHtml(r.department)}</td>
+          <td>${escapeHtml(r.applicant_name)}</td>
+          <td>${PRIORITY_LABELS[r.priority] || r.priority}</td>
+          <td>${isOverdue(r) ? '<span class="overdue">' + escapeHtml(r.valid_until) + '</span>' : (r.valid_until || '—')}</td>
+          <td>${fmtDate(r.created_at)}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+      tbody.querySelectorAll('.row-check').forEach((cb) => {
+        cb.addEventListener('change', () => {
+          const id = Number(cb.dataset.id);
+          if (cb.checked) selected.add(id); else selected.delete(id);
+          updateBulkBtn();
+        });
+      });
+      selectAll.checked = list.length > 0 && list.every((r) => selected.has(r.id));
+      updateBulkBtn();
+    };
+
+    selectAll.addEventListener('change', () => {
+      for (const r of visible()) {
+        if (selectAll.checked) selected.add(r.id); else selected.delete(r.id);
+      }
+      render();
+    });
+
+    document.querySelectorAll('.quick-filter').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.quick-filter').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter;
+        render();
+      });
+    });
+
+    const dialog = document.getElementById('bulkDialog');
+    bulkBtn.addEventListener('click', () => {
+      if (!selected.size) return;
+      document.getElementById('bulkInfo').textContent = `Будет согласовано заявок: ${selected.size}`;
+      document.getElementById('bulkComment').value = '';
+      dialog.hidden = false;
+    });
+    document.getElementById('bulkCancel').addEventListener('click', () => { dialog.hidden = true; });
+
+    document.getElementById('bulkConfirm').addEventListener('click', async () => {
+      const errEl = document.getElementById('bulkError');
+      errEl.textContent = '';
+      try {
+        const res = await api('/api/approval/bulk', {
+          method: 'POST',
+          body: JSON.stringify({ ids: [...selected], comment: document.getElementById('bulkComment').value || undefined })
+        });
+        dialog.hidden = true;
+        selected.clear();
+        errEl.textContent = `Согласовано: ${res.approved}` + (res.skipped.length ? `, пропущено: ${res.skipped.length}` : '');
+        await load();
+      } catch (err) { errEl.textContent = err.message; }
+    });
+
+    const load = async () => {
+      all = await api('/api/requests/my-approvals');
+      for (const id of [...selected]) if (!all.some((r) => r.id === id)) selected.delete(id);
+      render();
+    };
+
+    await load();
+  }
+
+  const AUDIT_LABELS = {
+    login: 'Вход',
+    logout: 'Выход',
+    login_failed: 'Неудачная попытка',
+    lockout: 'Блокировка',
+    password_changed: 'Смена пароля'
+  };
+
+  async function initAudit() {
+    await loadMe();
+
+    const reload = async () => {
+      const params = new URLSearchParams();
+      const user = document.getElementById('filterUser').value;
+      const event = document.getElementById('filterEvent').value;
+      const from = document.getElementById('filterFrom').value;
+      const to = document.getElementById('filterTo').value;
+      if (user) params.set('user', user);
+      if (event) params.set('event_type', event);
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+
+      const rows = await api('/api/audit?' + params.toString());
+      const tbody = document.getElementById('rows');
+      tbody.innerHTML = '';
+      document.getElementById('empty').hidden = rows.length > 0;
+      for (const r of rows) {
+        const tr = document.createElement('tr');
+        const label = AUDIT_LABELS[r.event_type] || r.event_type;
+        tr.innerHTML = `
+          <td>${fmtDate(r.created_at)}</td>
+          <td>${escapeHtml(r.user_login)}</td>
+          <td><span class="badge event-${r.event_type}">${label}</span></td>
+          <td>${escapeHtml(r.ip_address)}</td>
+          <td>${escapeHtml(r.details)}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    };
+
+    document.getElementById('applyFilters').addEventListener('click', reload);
+    document.getElementById('filterUser').addEventListener('keydown', (e) => { if (e.key === 'Enter') reload(); });
+    document.getElementById('resetFilters').addEventListener('click', () => {
+      document.getElementById('filterUser').value = '';
+      document.getElementById('filterEvent').value = '';
+      document.getElementById('filterFrom').value = '';
+      document.getElementById('filterTo').value = '';
+      reload();
+    });
+
+    await reload();
+  }
+
   function escapeHtml(s) {
     if (s == null) return '';
     return String(s)
@@ -341,5 +519,5 @@ const app = (() => {
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  return { initList, initRequest };
+  return { initList, initRequest, initApprovals, initAudit };
 })();

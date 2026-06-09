@@ -107,6 +107,25 @@ router.post('/', (req, res) => {
   res.status(201).json({ id: result.lastInsertRowid, number });
 });
 
+// «Мои согласования»: заявки, ожидающие решения согласующего.
+router.get('/my-approvals', requireRole('approver', 'admin'), (req, res) => {
+  const rows = db.prepare(`
+    SELECT r.*, u.full_name AS applicant_name
+    FROM requests r JOIN users u ON u.id = r.applicant_id
+    WHERE r.status = 'на_согласовании'
+    ORDER BY
+      CASE r.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,
+      r.created_at ASC
+  `).all();
+  res.json(rows);
+});
+
+// Счётчик ожидающих заявок для пункта меню.
+router.get('/count-pending', requireRole('approver', 'admin'), (req, res) => {
+  const count = db.prepare("SELECT COUNT(*) AS c FROM requests WHERE status = 'на_согласовании'").get().c;
+  res.json({ count });
+});
+
 router.get('/:id', (req, res) => {
   const id = Number(req.params.id);
   const user = req.session.user;

@@ -66,7 +66,25 @@ db.exec(`
     comment TEXT,
     changed_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_login TEXT,
+    event_type TEXT NOT NULL,
+    ip_address TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    details TEXT
+  );
 `);
+
+// Миграция: поля для блокировки учётной записи после неудачных входов.
+const userColumns = db.prepare("PRAGMA table_info(users)").all().map((c) => c.name);
+if (!userColumns.includes('failed_attempts')) {
+  db.exec('ALTER TABLE users ADD COLUMN failed_attempts INTEGER NOT NULL DEFAULT 0');
+}
+if (!userColumns.includes('locked_until')) {
+  db.exec('ALTER TABLE users ADD COLUMN locked_until TEXT');
+}
 
 const adminExists = db.prepare('SELECT id FROM users WHERE username = ?').get('admin');
 if (!adminExists) {
